@@ -1,40 +1,47 @@
-MARS ORRERY
+# MARS ORRERY
 
 A real time Mars scene built with Three.js, a bunch of publicly available data, whilst having some fun.
 
 This project started as a personal study of real time rendering, shaders, lighting, and post processing in the browser. The goal was less about building a finished product and more about experimenting with graphics techniques and learning how modern web based 3D pipelines work.
 
-Features
--Real time lighting and shadows
--Orbiting moons with motion trails
--Atmospheric shaders
--Lens flare implementation
--Interactive control panel
--Shaders and post processing
+## Features
 
-Stack
--Three.js
--Vite
--JavaScript
--GLSL shaders
--HTML / CSS
--Blender
+- Real time lighting and shadows
+- Orbiting moons with motion trails
+- Atmospheric shaders
+- Lens flare implementation
+- Interactive control panel
+- Shaders and post processing
 
-To run locally
-1-istall dependencies:
+## Stack
 
+- Three.js
+- Vite
+- JavaScript
+- GLSL shaders
+- HTML / CSS
+- Blender
+
+## To run locally
+
+1. Install dependencies:
+
+```bash
 npm i
+```
 
-2-Start the development server:
+2. Start the development server:
 
+```bash
 npm run dev
+```
 
-Future Ideas
+## Future Ideas
 
-Volumetric clouds
-Starry skybox
-Work around texture deformation in the poles
+- Volumetric clouds
+- Starry skybox
+- Work around texture deformation in the poles
 
+## License
 
-License
 MIT
