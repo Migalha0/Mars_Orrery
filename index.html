@@ -2,16 +2,65 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style type="text/css">
+      html {background-color: #000000;}
+      .hidden {opacity: 0;}
+      .visible {opacity: 1;}
+      .transition {transition:1s}
+    </style>
+    <script type="text/javascript">
+      document.documentElement.classList.add('hidden','transition');
+
+      window.addEventListener('load',()=>{
+        document.documentElement.classList.remove('hidden');
+        document.documentElement.classList.add('visible');
+      });
+    </script>
+
+    <link rel="icon" type="image/svg+xml" href="./src/assets/svg/rocket-lunch.svg"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>shader_sphere</title>
+    <title>MARS</title>
   </head>
   <body>
-    HOME
-    <a href="page_1/index.html">MARS</a>
-    <a href="page_2/index.html">page_2</a>
+    <!-- PAGE_1 -->
+    <canvas class="webgl"></canvas>
+    <h1>MARS</h1>
+    <div class="stats"></div>
+    
+    <div class="toggle_container">
+      <div class="toggle">
+        <button class="square inactive" id="performance_toggle">
+          <svg xmlns="http://www.w3.org/2000/svg" id="Outline" viewBox="0 0 24 24" width="50" height="50" fill="white">
+            <path d="M23,22H3a1,1,0,0,1-1-1V1A1,1,0,0,0,0,1V21a3,3,0,0,0,3,3H23a1,1,0,0,0,0-2Z"/>
+            <path d="M15,20a1,1,0,0,0,1-1V12a1,1,0,0,0-2,0v7A1,1,0,0,0,15,20Z"/>
+            <path d="M7,20a1,1,0,0,0,1-1V12a1,1,0,0,0-2,0v7A1,1,0,0,0,7,20Z"/>
+            <path d="M19,20a1,1,0,0,0,1-1V7a1,1,0,0,0-2,0V19A1,1,0,0,0,19,20Z"/>
+            <path d="M11,20a1,1,0,0,0,1-1V7a1,1,0,0,0-2,0V19A1,1,0,0,0,11,20Z"/>
+          </svg>
+        </button>
+        <button class="square inactive" id="moon_trail_toggle">        
+          <svg xmlns="http://www.w3.org/2000/svg" id="Layer_1" data-name="Layer 1" viewBox="0 0 24 24" width="50" height="50" fill="white">
+            <path d="m23.36.639c-1.303-1.304-3.927-.626-7.799,2.017-1.107-.423-2.308-.656-3.562-.656C6.486,2,2,6.486,2,12c0,1.254.233,2.454.656,3.561C.012,19.433-.667,22.056.64,23.361c.424.425.993.637,1.703.637,1.153,0,2.679-.559,4.562-1.675.496-.294,1.009-.622,1.533-.979,1.107.423,2.308.656,3.562.656,5.514,0,10-4.486,10-10,0-1.261-.235-2.469-.664-3.581,2.168-3.166,3.514-6.289,2.024-7.78Zm-1.414,1.414c.319.319-.142,1.917-1.665,4.347-.717-1.057-1.63-1.969-2.687-2.685,3.02-1.899,4.233-1.782,4.352-1.662Zm-9.946,1.947c3.044,0,5.696,1.709,7.048,4.217-1.236,1.699-2.89,3.667-5.027,5.804-1.944,1.944-3.937,3.669-5.799,5.029-2.511-1.351-4.221-4.004-4.221-7.049,0-4.411,3.589-8,8-8Zm-6.114,16.602c-2.689,1.593-3.735,1.441-3.832,1.344-.122-.122-.235-1.337,1.661-4.352.717,1.059,1.632,1.974,2.691,2.691-.175.11-.349.216-.52.317Zm14.114-8.602c0,4.411-3.589,8-8,8-.522,0-1.033-.051-1.527-.147,1.627-1.271,3.315-2.771,4.962-4.418,1.312-1.312,2.935-3.095,4.413-4.989.099.503.152,1.022.152,1.554Z"/>
+          </svg>
+        </button>
+        <div class="centered_content">
+          <input class="rectangle" id="rotation_slider"     type="range" min="0.0" max="0.5" value="0.08" step="0.01">
+          <svg xmlns="http://www.w3.org/2000/svg" id="Outline" viewBox="0 0 24 24" width="30" height="30" fill="white"><path d="M12,0A12,12,0,1,0,24,12,12.013,12.013,0,0,0,12,0ZM22,12a9.938,9.938,0,0,1-1.662,5.508l-1.192-1.193A.5.5,0,0,1,19,15.962V15a3,3,0,0,0-3-3H13a1,1,0,0,1-1-1v-.5a.5.5,0,0,1,.5-.5A2.5,2.5,0,0,0,15,7.5v-1a.5.5,0,0,1,.5-.5h1.379a2.516,2.516,0,0,0,1.767-.732l.377-.377A9.969,9.969,0,0,1,22,12Zm-19.951.963,3.158,3.158A2.978,2.978,0,0,0,7.329,17H10a1,1,0,0,1,1,1v3.949A10.016,10.016,0,0,1,2.049,12.963ZM13,21.949V18a3,3,0,0,0-3-3H7.329a1,1,0,0,1-.708-.293L2.163,10.249A9.978,9.978,0,0,1,17.456,3.63l-.224.224A.507.507,0,0,1,16.879,4H15.5A2.5,2.5,0,0,0,13,6.5v1a.5.5,0,0,1-.5.5A2.5,2.5,0,0,0,10,10.5V11a3,3,0,0,0,3,3h3a1,1,0,0,1,1,1v.962a2.516,2.516,0,0,0,.732,1.767l1.337,1.337A9.971,9.971,0,0,1,13,21.949Z"/></svg>
+        </div>
+        <div class="centered_content">
+          <input class="rectangle" id="rotation_slider_cam" type="range" min="-0.5" max="0.5" value="0.5" step="0.01">
+          <svg xmlns="http://www.w3.org/2000/svg" id="Layer_1" data-name="Layer 1" viewBox="0 0 24 24" width="30" height="30" fill="white">
+            <path d="m22.575,10.152c-.866-.358-1.854-.163-2.517.5l-.438.438c-.433-1.044-1.21-1.91-2.189-2.458.965-.912,1.568-2.203,1.568-3.633,0-2.757-2.243-5-5-5-1.634,0-3.087.788-4,2.003-.913-1.216-2.366-2.003-4-2.003C3.243,0,1,2.243,1,5c0,1.429.603,2.721,1.568,3.633-1.531.856-2.568,2.493-2.568,4.367v6c0,2.757,2.243,5,5,5h10c2.081,0,3.869-1.278,4.621-3.09l.438.438c.443.443,1.031.678,1.63.678.298,0,.599-.058.886-.177.866-.358,1.425-1.196,1.425-2.133v-7.429c0-.938-.56-1.775-1.425-2.133ZM14,2c1.654,0,3,1.346,3,3s-1.346,3-3,3-3-1.346-3-3,1.346-3,3-3Zm-8,0c1.654,0,3,1.346,3,3s-1.346,3-3,3-3-1.346-3-3,1.346-3,3-3Zm12,17c0,1.654-1.346,3-3,3H5c-1.654,0-3-1.346-3-3v-6c0-1.654,1.346-3,3-3h10c1.654,0,3,1.346,3,3v6Zm4,.714c0,.171-.104.25-.191.286-.086.036-.215.054-.337-.067l-1.472-1.472v-4.922l1.472-1.472c.122-.121.251-.103.337-.067.087.036.191.115.191.286v7.429Z"/>
+          </svg>
+        </div>
+      </div>
+      <div class="arrow"></div>
+    </div>
+
+    <script type="module" src="main.js"></script>
   </body>
-  <script>
-    window.location.href = "/page_1/index.html";
-  </script>
 </html>
