@@ -9,8 +9,8 @@ import flare4 from './src/assets/lensFlare/lensflare4.png';
 import { Lensflare, LensflareElement } from 'three/examples/jsm/Addons.js';
 import { GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 
-import atmosphere_vert from './src/assets/glsl/atmosphere/atmosphere_frag.glsl?raw';
-import atmosphere_frag from './src/assets/glsl/atmosphere/atmosphere_vert.glsl?raw';
+import atmosphere_vert from './src/assets/glsl/atmosphere/atmosphere_vert.glsl?raw';
+import atmosphere_frag from './src/assets/glsl/atmosphere/atmosphere_frag.glsl?raw';
 
 import atmosphere_glow_vert from './src/assets/glsl/atmosphere_glow/atmosphere_glow_vert.glsl?raw'
 import atmosphere_glow_frag from './src/assets/glsl/atmosphere_glow/atmosphere_glow_frag.glsl?raw'
