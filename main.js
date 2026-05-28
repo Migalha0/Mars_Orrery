@@ -37,7 +37,7 @@ import { vec2 } from 'three/tsl';
     // Geometry variables
     // #region
     const mars_size = 3;
-    const mars_atmosphere_size = 1.068;
+    const mars_atmosphere_size = 1.077;
 
     const size_multiplier = 2;
     const phobos_size = mars_size * 0.0032 * size_multiplier;
@@ -151,20 +151,28 @@ import { vec2 } from 'three/tsl';
 
 //~~~~~~~~~~~~~~~~~~~~~~~WEBGL~~~~~~~~~~~~~~~~~~~~~~~
 // #region
+    // Start Renderer
+    //#region 
+    const canvas = document.querySelector('.webgl');
+    const renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias:true,
+        powerPreference: "default"
+    });
+    //#endregion
     // Light
     // #region
-    const ambient_light = new THREE.AmbientLight("#0f2a4e")
+    const ambient_light = new THREE.AmbientLight("#0f2a4e",0.04)
     const green_light = new THREE.DirectionalLight("#097a45",0.1)
     const sun_light = new THREE.DirectionalLight("#bd921d",0)
-    const light = new THREE.DirectionalLight("#f0cabb",3);
-    // const light = new THREE.PointLight("#dbb3a3",300,100,2.2);
-    // const light = new THREE.HemisphereLight("#8a0c0c","#0e051f",40);
+    const light = new THREE.DirectionalLight("rgb(214, 191, 180)",3);
+
     light.castShadow = true;
     light.shadow.mapSize.width  = 2048
     light.shadow.mapSize.height = 2048
 
     // Fix shadow artifacts (streaks,triangles)
-    light.shadow.bias = -0.0006
+    light.shadow.bias = -0.01
     light.position.set(1,0,13);
 
     green_light.position.copy(light.position).negate().multiplyScalar(0.35)
@@ -223,6 +231,11 @@ import { vec2 } from 'three/tsl';
     displacement_map_mars.wrapS = THREE.RepeatWrapping;
     displacement_map_mars.wrapT = THREE.RepeatWrapping;
 
+    // Running textures thought anisotropic filtering to fix stretching at the poles
+    texture_map_mars.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    normal_map_mars.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    displacement_map_mars.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
     const geometry_mars = new THREE.IcosahedronGeometry(mars_size, 128);
     const material_mars = new THREE.MeshStandardMaterial({
         // textures
@@ -232,18 +245,18 @@ import { vec2 } from 'three/tsl';
 
         // normal map strength
         normalScale: new THREE.Vector2(0.9,0.9),
-        displacementScale: 0.3,
+        displacementScale: 0.35,
 
         // shadow
         shadowSide: THREE.FrontSide,
 
-        color:"#fff6c1",
+        // color:"#fff6c1",
         wireframe:false,
         transparent:false,
 
         // reflective attributes
-        roughness:0.9,
-        metalness:0.75,
+        roughness:0.75,
+        metalness:0.1,
 
         // lowpoly
         flatShading:false,
@@ -274,7 +287,7 @@ import { vec2 } from 'three/tsl';
         uniforms: {
             uLightPosition: {value: light.position},
             uDisplacementMap: {value:displacement_map_mars},
-            uDisplacementScale: {value:0.31},
+            uDisplacementScale: {value:material_mars.displacementScale+0.01},
             uWindDirection: {value: new THREE.Vector2(-0.2,-0.3)},
             uTime: {value:0}
         }
@@ -427,14 +440,8 @@ import { vec2 } from 'three/tsl';
     // #endregion
 
 
-    // Renderer
+    // Renderer settings
     // #region
-    const canvas = document.querySelector('.webgl');
-    const renderer = new THREE.WebGLRenderer({
-        canvas,
-        antialias:true,
-        powerPreference: "default"
-    });
     renderer.shadowMap.enabled = true;
     renderer.setSize(sizes.width,sizes.height);
     renderer.setPixelRatio(1.0);
