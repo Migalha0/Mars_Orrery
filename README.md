@@ -7,13 +7,13 @@ This project started as a personal study of real time rendering, shaders, lighti
 ## Features
 
 - Real time lighting and shadows
-- Orbiting moons with motion trails
+- Orbiting moons with [optional] motion trails
 - Atmospheric shaders
-- Lens flare implementation
+- Lens flare
 - Interactive control panel
-- Shaders and post processing
+- image post processing
 
-## Stack
+## Tools used
 
 - Three.js
 - Vite
@@ -40,7 +40,6 @@ npm run dev
 
 - Volumetric clouds
 - Starry skybox
-- Work around texture deformation in the poles
 
 ## License
 

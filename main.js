@@ -1,14 +1,19 @@
 import * as THREE from 'three';
 
+// importing flares
 import flare0 from './src/assets/lensFlare/lensflare0.png';
 import flare1 from './src/assets/lensFlare/lensflare1.png';
 import flare2 from './src/assets/lensFlare/lensflare2.png';
 import flare3 from './src/assets/lensFlare/lensflare3.jpg';
 import flare4 from './src/assets/lensFlare/lensflare4.png';
-
 import { Lensflare, LensflareElement } from 'three/examples/jsm/Addons.js';
-import { GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 
+// importing addons
+import { GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
+import Stats from 'stats.js';
+import { vec2 } from 'three/tsl';
+
+// importing shaders
 import atmosphere_vert from './src/assets/glsl/atmosphere/atmosphere_vert.glsl?raw';
 import atmosphere_frag from './src/assets/glsl/atmosphere/atmosphere_frag.glsl?raw';
 
@@ -18,9 +23,8 @@ import atmosphere_glow_frag from './src/assets/glsl/atmosphere_glow/atmosphere_g
 import vertexShader_clouds_vert from './src/assets/glsl/clouds/clouds_vert.glsl?raw'
 import vertexShader_clouds_frag from './src/assets/glsl/clouds/clouds_frag.glsl?raw'
 
-import Stats from 'stats.js';
+// importing style
 import './style.css';
-import { vec2 } from 'three/tsl';
 
 //~~~~~~~~~~~~~~~~~~~~~~~VARS~~~~~~~~~~~~~~~~~~~~~~~~
 // #region
@@ -152,14 +156,19 @@ import { vec2 } from 'three/tsl';
 //~~~~~~~~~~~~~~~~~~~~~~~WEBGL~~~~~~~~~~~~~~~~~~~~~~~
 // #region
     // Start Renderer
-    //#region 
+    //#region
     const canvas = document.querySelector('.webgl');
     const renderer = new THREE.WebGLRenderer({
         canvas,
         antialias:true,
         powerPreference: "default"
     });
+    renderer.shadowMap.enabled = true;
+    renderer.setSize(sizes.width,sizes.height);
+    renderer.setPixelRatio(1.0);
+
     //#endregion
+    
     // Light
     // #region
     const ambient_light = new THREE.AmbientLight("#0f2a4e",0.04)
@@ -172,7 +181,7 @@ import { vec2 } from 'three/tsl';
     light.shadow.mapSize.height = 2048
 
     // Fix shadow artifacts (streaks,triangles)
-    light.shadow.bias = -0.01
+    light.shadow.bias = -0.001
     light.position.set(1,0,13);
 
     green_light.position.copy(light.position).negate().multiplyScalar(0.35)
@@ -244,7 +253,7 @@ import { vec2 } from 'three/tsl';
         displacementMap: displacement_map_mars,
 
         // normal map strength
-        normalScale: new THREE.Vector2(0.9,0.9),
+        normalScale: new THREE.Vector2(1.6,1.6),
         displacementScale: 0.35,
 
         // shadow
@@ -262,14 +271,14 @@ import { vec2 } from 'three/tsl';
         flatShading:false,
     });
     const mars = new THREE.Mesh(geometry_mars,material_mars);
+    mars.receiveShadow = true;
+    mars.castShadow = true;
 
     // flipping around the normal map
     mars.material.normalScale.y = -1;
 
     mars.rotation.set(mars_tilt_angle*(Math.PI/180),0,0)
 
-    mars.receiveShadow = true;
-    mars.castShadow = true;
 
     // cloud shader
     // #region
@@ -402,6 +411,87 @@ import { vec2 } from 'three/tsl';
     const deimos_trail_points = new THREE.Line(deimos_trail_geometry,deimos_trail_material);
     // #endregion
 
+    // Create test moon
+    // Create generic moon function
+    function create_moon(
+        scale,
+        color,
+
+        orbit_speed,
+        orbit_radius,
+
+        tilt = 0,
+
+        segments = 16,
+        rings = 8,
+    ){
+        // Mesh
+        const geometry_moon = new THREE.SphereGeometry(
+            mars_size * scale,
+            segments,
+            rings
+        )
+        const material_moon = new THREE.MeshStandardMaterial({
+            color: color,
+            wireframe: false
+        })
+        const mesh_moon = new THREE.Mesh(geometry_moon,material_moon);
+        mesh_moon.castShadow = true;
+        mesh_moon.receiveShadow = true;
+        mesh_moon.position.set(10,0,0);
+
+        // Trail
+        const trail_geometry = new THREE.BufferGeometry();
+        const trail_material = new THREE.LineBasicMaterial({
+            vertexColors: true,
+            transparent: true,
+            linewidth: 1
+        })
+        const points = new THREE.Line(trail_geometry,trail_material);
+
+        // Orbit plane
+        const orbit_plane = new THREE.Object3D();
+        orbit_plane.rotation.set(
+            tilt * (Math.PI/180),
+            0,
+            0
+        );
+
+        orbit_plane.add(mesh_moon)
+        orbit_plane.add(points)
+
+        // return moon_object
+        return {
+            angle: 0,
+
+            orbit_radius: orbit_radius,
+            orbit_speed: orbit_speed,
+            orbit_plane: orbit_plane,
+
+            mesh: mesh_moon,
+
+            trail: [],
+            trail_max: 200,
+            trail_geometry: trail_geometry,
+            trail_points: points
+        }
+    };
+
+    //#region
+    const testmoon = new create_moon(
+        0.1,
+        "#9c0b0b",
+
+        2,
+        4,
+
+        30,
+
+        16,
+        8
+    )
+
+    //#endregion
     // Camera
     // #region
     const camera = new THREE.PerspectiveCamera(45, sizes.width/sizes.height,0.1,1000);
@@ -418,9 +508,10 @@ import { vec2 } from 'three/tsl';
     scene.add(mars_atmos);
     scene.add(mars_atmos_glow);
 
+    scene.add(testmoon.orbit_plane)
     scene.add(phobosPivot);
     scene.add(deimosPivot);
-    // scene.add(phobos);
+
     phobosPivot.add(phobos_trail_points);
     deimosPivot.add(deimos);
     deimosPivot.add(deimos_trail_points);
@@ -440,12 +531,11 @@ import { vec2 } from 'three/tsl';
     // #endregion
 
 
-    // Renderer settings
+    // Renderer run
     // #region
-    renderer.shadowMap.enabled = true;
-    renderer.setSize(sizes.width,sizes.height);
-    renderer.setPixelRatio(1.0);
+
     renderer.render(scene,camera);
+
     // #endregion
 
 // #endregion
@@ -498,100 +588,107 @@ import { vec2 } from 'three/tsl';
         // Getting the time
         timer.update();
         const deltaTime = timer.getDelta();
-        const timeElapsed = timer.getElapsed();
 
-        // Animating green light ---
-        // green_light.position.x =  1 * Math.cos((mars_rotation_speed* (1/10)) *timer.getElapsed())
-        // green_light.position.z =  1 * Math.sin((mars_rotation_speed* (1/10)) *timer.getElapsed())
         // Animating Mars ---
         // #region
-        mars.rotation.y += deltaTime * mars_rotation_speed;
+            mars.rotation.y += deltaTime * mars_rotation_speed;
 
-        // updating light position for the clouds
-        mars.updateMatrix();
-        const localLightPos = new THREE.Vector3();
-        localLightPos.copy(light.position);
-        mars.worldToLocal(localLightPos);
-        material_cloud_shader.uniforms.uLightPosition.value = localLightPos
-
+            // updating light position for the clouds
+            mars.updateMatrix();
+            const localLightPos = new THREE.Vector3();
+            localLightPos.copy(light.position);
+            mars.worldToLocal(localLightPos);
+            material_cloud_shader.uniforms.uLightPosition.value = localLightPos
         // #endregion
 
+        // Moon update function
+        function moon_update(moon){
+            // Tidally locking moon to the center of movement
+            moon.angle += moon.orbit_speed * deltaTime;
+
+            // Translating the moon around the center of movement
+            moon.mesh.position.x = 1 * Math.sin(moon.angle) * moon.orbit_radius;
+            moon.mesh.position.z = 1 * Math.cos(moon.angle) * moon.orbit_radius;
+        };
+        // Animating testmoon
+        if(testmoon){
+            moon_update(testmoon)
+        }
         // Animating Phobos ---
         // #region
-        if(phobos){
-            // Tidally locking Phobos' rotation
-            
-            phobos_angle += phobos_rotation_speed * timer.getDelta();
+            if(phobos){
+                // Tidally locking Phobos' rotation                
+                phobos_angle += phobos_rotation_speed * deltaTime;
 
-            // Translating Phobos around mars
-            phobos.position.x = 1 * Math.sin(phobos_angle) * phobos_orbit_radius;
-            phobos.position.z = 1 * Math.cos(phobos_angle) * phobos_orbit_radius;
-            // Animating Phobos trail
-            // append last positions
-            phobos_trail.push(phobos.position.clone());
-            if(phobos_trail.length > phobos_trail_max) {
-                phobos_trail.shift()
-            };
-            // turn array into geometry
-            const phobos_positions = new Float32Array(phobos_trail.length * 3);
-            const phobos_positions_colors = new Float32Array(phobos_trail.length * 4)
-            for (let i = 0; i < phobos_trail.length ; i++){
-                phobos_positions[i*3]       = phobos_trail[i].x;
-                phobos_positions[(i*3) + 1] = phobos_trail[i].y;
-                phobos_positions[(i*3) + 2] = phobos_trail[i].z;
-    
-                const opacity = i/(phobos_trail.length*10);
-                phobos_positions_colors[i*4]       = 1;
-                phobos_positions_colors[(i*4) + 1] = 1;
-                phobos_positions_colors[(i*4) + 2] = 1;
-                phobos_positions_colors[(i*4) + 3] = opacity;
-            };
-    
-            // send to GPU
-            if (moon_trail) {
-                phobos_trail_geometry.setAttribute('position',new THREE.BufferAttribute(phobos_positions, 3));
-                phobos_trail_geometry.setAttribute('color',new THREE.BufferAttribute(phobos_positions_colors, 4));
-                phobos_trail_geometry.attributes.position.needsUpdate = true;
-                phobos_trail_geometry.attributes.color.needsUpdate = true;
+                // Translating Phobos around mars
+                phobos.position.x = 1 * Math.sin(phobos_angle) * phobos_orbit_radius;
+                phobos.position.z = 1 * Math.cos(phobos_angle) * phobos_orbit_radius;
+                // Animating Phobos trail
+                // append last positions
+                phobos_trail.push(phobos.position.clone());
+                if(phobos_trail.length > phobos_trail_max) {
+                    phobos_trail.shift()
+                };
+                // turn array into geometry
+                const phobos_positions = new Float32Array(phobos_trail.length * 3);
+                const phobos_positions_colors = new Float32Array(phobos_trail.length * 4)
+                for (let i = 0; i < phobos_trail.length ; i++){
+                    phobos_positions[i*3]       = phobos_trail[i].x;
+                    phobos_positions[(i*3) + 1] = phobos_trail[i].y;
+                    phobos_positions[(i*3) + 2] = phobos_trail[i].z;
+        
+                    const opacity = i/(phobos_trail.length*10);
+                    phobos_positions_colors[i*4]       = 1;
+                    phobos_positions_colors[(i*4) + 1] = 1;
+                    phobos_positions_colors[(i*4) + 2] = 1;
+                    phobos_positions_colors[(i*4) + 3] = opacity;
+                };
+        
+                // send to GPU
+                if (moon_trail) {
+                    phobos_trail_geometry.setAttribute('position',new THREE.BufferAttribute(phobos_positions, 3));
+                    phobos_trail_geometry.setAttribute('color',new THREE.BufferAttribute(phobos_positions_colors, 4));
+                    phobos_trail_geometry.attributes.position.needsUpdate = true;
+                    phobos_trail_geometry.attributes.color.needsUpdate = true;
+                }
             }
-        }
         // #endregion
 
         // Animating Deimos ---
         // #region
-        if (deimos){
+            if (deimos){
 
-            deimos_angle += deimos_rotation_speed * timer.getDelta();
+                deimos_angle += deimos_rotation_speed * deltaTime;
+            
+                deimos.position.x = 1 * Math.sin(deimos_angle) * deimos_orbit_radius;
+                deimos.position.z = 1 * Math.cos(deimos_angle) * deimos_orbit_radius;
+                // Animating Deimos trail
+                deimos_trail.push(deimos.position.clone());
+                if(deimos_trail.length > deimos_trail_max) {
+                    deimos_trail.shift()
+                };
+                const deimos_positions = new Float32Array(deimos_trail.length * 3);
+                const deimos_positions_colors = new Float32Array(deimos_trail.length * 4);
+                for(let i = 0; i < deimos_trail.length; i++){
+                    deimos_positions[i*3]       = deimos_trail[i].x;
+                    deimos_positions[(i*3) + 1] = deimos_trail[i].y;
+                    deimos_positions[(i*3) + 2] = deimos_trail[i].z;
         
-            deimos.position.x = 1 * Math.sin(deimos_angle) * deimos_orbit_radius;
-            deimos.position.z = 1 * Math.cos(deimos_angle) * deimos_orbit_radius;
-            // Animating Deimos trail
-            deimos_trail.push(deimos.position.clone());
-            if(deimos_trail.length > deimos_trail_max) {
-                deimos_trail.shift()
-            };
-            const deimos_positions = new Float32Array(deimos_trail.length * 3);
-            const deimos_positions_colors = new Float32Array(deimos_trail.length * 4);
-            for(let i = 0; i < deimos_trail.length; i++){
-                deimos_positions[i*3]       = deimos_trail[i].x;
-                deimos_positions[(i*3) + 1] = deimos_trail[i].y;
-                deimos_positions[(i*3) + 2] = deimos_trail[i].z;
-    
-                const opacity = i/(deimos_trail.length * 10);
-                deimos_positions_colors[i*4]       = 1;
-                deimos_positions_colors[(i*4) + 1] = 1;
-                deimos_positions_colors[(i*4) + 2] = 1;
-                deimos_positions_colors[(i*4) + 3] = opacity;
+                    const opacity = i/(deimos_trail.length * 10);
+                    deimos_positions_colors[i*4]       = 1;
+                    deimos_positions_colors[(i*4) + 1] = 1;
+                    deimos_positions_colors[(i*4) + 2] = 1;
+                    deimos_positions_colors[(i*4) + 3] = opacity;
+                }
+        
+                // Send to GPU
+                if (moon_trail) {
+                    deimos_trail_geometry.setAttribute('position',new THREE.BufferAttribute(deimos_positions,3));
+                    deimos_trail_geometry.setAttribute('color', new THREE.BufferAttribute(deimos_positions_colors,4));
+                    deimos_trail_geometry.attributes.position.needsUpdate = true;
+                    deimos_trail_geometry.attributes.color.needsUpdate = true;
+                }
             }
-    
-            // Send to GPU
-            if (moon_trail) {
-                deimos_trail_geometry.setAttribute('position',new THREE.BufferAttribute(deimos_positions,3));
-                deimos_trail_geometry.setAttribute('color', new THREE.BufferAttribute(deimos_positions_colors,4));
-                deimos_trail_geometry.attributes.position.needsUpdate = true;
-                deimos_trail_geometry.attributes.color.needsUpdate = true;
-            }
-        }
         // #endregion
 
         // Smoothing out camera control ---
