@@ -473,13 +473,64 @@ import './style.css';
             trail: [],
             trail_max: 200,
             trail_geometry: trail_geometry,
-            trail_points: points
+            trail_points: points,
+
+            update_position(delta_time){
+                // Tidally locking moon to the center of movement
+                this.angle += this.orbit_speed * delta_time;
+
+                // Translating the moon around the center of movement
+                this.mesh.position.x = 1 * Math.sin(this.angle) * this.orbit_radius;
+                this.mesh.position.z = 1 * Math.cos(this.angle) * this.orbit_radius;
+            },
+            draw_trail(){
+                // Drawing trail
+                // catch
+                if(!moon_trail){
+                    return
+                }
+
+                // append last positions
+                this.trail.push(this.mesh.position.clone());
+                if(this.trail.length > this.trail_max){
+                    this.trail.shift();
+                }
+
+                // for each point in the array break down array into coordinates
+                // for each point in the array break down array into colors      
+                const positions = new Float32Array(
+                    this.trail.length * 3
+                );
+                const colors = new Float32Array(
+                    this.trail.length * 4
+                );
+
+                for (let i = 0; i < this.trail.length ; i++){
+                    positions[(i*3)]     = this.trail[i].x;
+                    positions[(i*3) + 1] = this.trail[i].y;
+                    positions[(i*3) + 2] = this.trail[i].z;
+                    
+                    const opacity = i/(this.trail.length * 10);
+                    colors[(i*4)]     = 1;
+                    colors[(i*4) + 1] = 1;
+                    colors[(i*4) + 2] = 1;
+                    colors[(i*4) + 3] = opacity;                
+                };
+
+                // Send to GPU
+                this.trail_geometry.setAttribute('position', new THREE.BufferAttribute(positions,3));
+                this.trail_geometry.setAttribute('color'   , new THREE.BufferAttribute(colors,4));
+                this.trail_geometry.attributes.position.needsUpdate = true;
+                this.trail_geometry.attributes.color.needsUpdate = true;
+            }
         }
     };
 
+
+
     //#region
     const testmoon = new create_moon(
-        0.1,
+        0.05,
         "#9c0b0b",
 
         2,
@@ -601,18 +652,12 @@ import './style.css';
             material_cloud_shader.uniforms.uLightPosition.value = localLightPos
         // #endregion
 
-        // Moon update function
-        function moon_update(moon){
-            // Tidally locking moon to the center of movement
-            moon.angle += moon.orbit_speed * deltaTime;
 
-            // Translating the moon around the center of movement
-            moon.mesh.position.x = 1 * Math.sin(moon.angle) * moon.orbit_radius;
-            moon.mesh.position.z = 1 * Math.cos(moon.angle) * moon.orbit_radius;
-        };
+
         // Animating testmoon
         if(testmoon){
-            moon_update(testmoon)
+            testmoon.update_position(deltaTime)
+            testmoon.draw_trail()
         }
         // Animating Phobos ---
         // #region
