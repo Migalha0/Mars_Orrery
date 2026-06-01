@@ -11,7 +11,7 @@ void main(){
 
     // Calculating camera dot product
     float cameraDotProduct = pow(dot(cameraDirection, vNormal),1.5);
-    float fresnel = pow(1.0-cameraDotProduct,10.0);
+    float fresnel = smoothstep(0.0,0.2,pow(1.0-cameraDotProduct,30.0));
     
     // Calculating light dot product
     float lightDotProduct = dot(lightDirection, vNormal);

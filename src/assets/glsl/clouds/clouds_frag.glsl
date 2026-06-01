@@ -10,8 +10,8 @@ void main(){
     // Get light direction
     vec3 lightDirection = normalize(uLightPosition - vPosition);
     float raw = (1.0 -(dot(lightDirection,(vNormal*1.4)))-0.2);
-    float lightDotProduct = smoothstep(-0.2,1.3,raw);
-    float diffuse = dot(lightDirection,vNormal)+0.35;
+    float lightDotProduct = smoothstep(0.0,1.2,raw);
+    float diffuse = dot(lightDirection,0.72*vNormal)+0.35;
 
     // Get useful variables
     float radius = length(vPosition);

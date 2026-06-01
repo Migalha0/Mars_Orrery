@@ -40,27 +40,43 @@ import './style.css';
 
     // Geometry variables
     // #region
-    const mars_size = 3;
-    const mars_atmosphere_size = 1.077;
+    // fake dimensions
+    const mars_size = 4.5;
+    const mars_tilt_angle = 25;
+    const mars_atmosphere_size = 1.053;
+    const phobos_orbital_distance = mars_size + (0.884 * mars_size)
+    const deimos_orbital_distance = mars_size + (3.465 * mars_size)
 
-    const size_multiplier = 2;
-    const phobos_size = mars_size * 0.0032 * size_multiplier;
-    const deimos_size = mars_size * 0.0018 * size_multiplier;
+    // real dimensions (in km)
+    const mars_diameter = 6770
+    const phobos_diameter = 22.2
+    const deimos_diameter = 12.4
+    const atmosphere_height= 11.1
+
+
+
+
+
     // #endregion
 
     // Animation variables
     // #region
     let cam_rotation_speed    = 0.05;
+
     let mars_rotation_speed   = 0.03;
-    let phobos_rotation_speed = mars_rotation_speed * 3.2;
-    let deimos_rotation_speed = mars_rotation_speed * 0.81;
+
+    let phobos_orbit_speed = mars_rotation_speed * 3.2;
+    let deimos_orbit_speed = mars_rotation_speed * 0.81;
+
+    const phobos_orbit_radius = 5.1;
+    const deimos_orbit_radius = 8;
 
     const rotation_slider = document.querySelector('#rotation_slider');
     rotation_slider.value = mars_rotation_speed;
     rotation_slider.addEventListener('input', ()=>{
         mars_rotation_speed = rotation_slider.value
-        phobos_rotation_speed = mars_rotation_speed * 3.2;
-        deimos_rotation_speed = mars_rotation_speed * 0.81;
+        phobos.orbit_speed = mars_rotation_speed * 3.2;
+        deimos.orbit_speed = mars_rotation_speed * 0.81;
     })
 
     const rotation_slider_cam = document.querySelector('#rotation_slider_cam');
@@ -71,15 +87,6 @@ import './style.css';
         controls.autoRotateSpeed = -cam_rotation_speed;
     })
 
-    const mars_tilt_angle = 25;
-
-    const phobos_orbit_radius = 5.1;
-    const phobos_trail = [];
-    const phobos_trail_max = 700;
-
-    const deimos_orbit_radius = 8;
-    const deimos_trail = [];
-    const deimos_trail_max = 350;
     // #endregion
 
     // Setting page size
@@ -88,6 +95,8 @@ import './style.css';
         height: window.innerHeight
     };
 
+    // 3d model loader
+    const gltf_loader = new GLTFLoader();
 // #endregion
 
 //~~~~~~~~~~~~~~~~~~~~~~~STATS~~~~~~~~~~~~~~~~~~~~~~~
@@ -116,18 +125,12 @@ import './style.css';
 
 // #endregion
 
-//~~~~~~~~~~~~~~~~~~~~~~~MOONS~~~~~~~~~~~~~~~~~~~~~~~
+//~~~~~~~~~~~~~~~~~~~~~~~MOON_TRAIL~~~~~~~~~~~~~~~~~~~~~~~
 // #region
-    let phobos_angle = 0;
-    let deimos_angle = 0;
-    
     const moonTrailToggleButton = document.querySelector('#moon_trail_toggle');
 
     moonTrailToggleButton.addEventListener('click', ()=>{
-        deimos_trail.length = 0;
-        phobos_trail.length = 0;
-        
-        
+
         moon_trail = !moon_trail;
         
         if (!moon_trail) {         
@@ -135,15 +138,13 @@ import './style.css';
             moonTrailToggleButton.classList.remove('active')
             moonTrailToggleButton.classList.add('inactive')
 
-            deimos_trail_geometry.setAttribute(
-                'position',
-                new THREE.BufferAttribute(new Float32Array(0), 3)
-            );
-
-            phobos_trail_geometry.setAttribute(
-                'position',
-                new THREE.BufferAttribute(new Float32Array(0), 3)
-            );
+            for (const moon of moons){
+                moon.trail.length = 0
+                moon.trail_geometry.setAttribute(
+                    'position',
+                    new THREE.BufferAttribute(new Float32Array(0), 3)
+                )
+            }
 
         } else {
             moonTrailToggleButton.classList.add('active')
@@ -181,7 +182,7 @@ import './style.css';
     light.shadow.mapSize.height = 2048
 
     // Fix shadow artifacts (streaks,triangles)
-    light.shadow.bias = -0.001
+    light.shadow.bias = -0.0005
     light.position.set(1,0,13);
 
     green_light.position.copy(light.position).negate().multiplyScalar(0.35)
@@ -231,12 +232,14 @@ import './style.css';
     // #region
     // Loading texture
     const texture_map_mars = texture_loader.load('./src/assets/textures/sphere_texture_mars_8k.jpg');
+    texture_map_mars.offset.x = 0.064
+    texture_map_mars.wrapS = true;
 
     // Loading normal map
-    const normal_map_mars = texture_loader.load('./src/assets/textures/normal_map_mars.png')
+    const normal_map_mars = texture_loader.load('./src/assets/textures/normal_map_8k.png')
 
     // Loading displacement map
-    const displacement_map_mars = texture_loader.load('./src/assets/textures/displacement_map_mars.png')
+    const displacement_map_mars = texture_loader.load('./src/assets/textures/mars_displacement_map_8k.png')
     displacement_map_mars.wrapS = THREE.RepeatWrapping;
     displacement_map_mars.wrapT = THREE.RepeatWrapping;
 
@@ -279,6 +282,7 @@ import './style.css';
 
     mars.rotation.set(mars_tilt_angle*(Math.PI/180),0,0)
 
+    //#endregion
 
     // cloud shader
     // #region
@@ -306,6 +310,7 @@ import './style.css';
     // #endregion
 
     // Mars atmosphere
+    // #region
     const geometry_mars_atmos = new THREE.IcosahedronGeometry(mars_size * mars_atmosphere_size,32);
     const material_mars_atmos = new THREE.ShaderMaterial({
         // pass light position to frag
@@ -340,81 +345,15 @@ import './style.css';
     const mars_atmos_glow = new THREE.Mesh(geometry_mars_atmos_glow,material_mars_atmos_glow)
     
     // #endregion
-
-    // Create satellite orbital plane
-    // #region
-    const phobosPivot = new THREE.Object3D();
-    phobosPivot.rotation.set(((3*1.093) + mars_tilt_angle)*(Math.PI/180),0,0)
-
-    const deimosPivot = new THREE.Object3D();
-    deimosPivot.rotation.set((0.93 + mars_tilt_angle)*(Math.PI/180),0,0)
-
-    // #endregion
-
-    // Create Phobos
-    // #region
-    // Using Phobos 3d model
-    let phobos;
-
-    const phobos_loader = new GLTFLoader();
-    phobos_loader.load('./src/assets/models/phobos_original.glb',(gltf)=>{
-        phobos = gltf.scene;
-
-        phobos.scale.set((1/10) * phobos_size,(1/10) * phobos_size,(1/10) * phobos_size)
-
-        phobos.traverse((child)=>{
-            if(child.isMesh){
-                child.castShadow = true;
-                child.receiveShadow = true;
-            }
-        })
-        phobosPivot.add(phobos);
-    })
     
-    // Simple sphere
-    // const geometry_phobos = new THREE.SphereGeometry(phobos_size,16,16);
-    // const material_phobos = new THREE.MeshStandardMaterial({
-    //     color: "#7E7166"
-    // });
-    // const phobos = new THREE.Mesh(geometry_phobos,material_phobos);
-    // phobos.castShadow = true;
-    // phobos.position.set(0,0,0)
-
-    // Phobos orbit trail
-    const phobos_trail_geometry = new THREE.BufferGeometry();
-    const phobos_trail_material = new THREE.LineBasicMaterial({
-        vertexColors:true,
-        transparent:true,
-        linewidth:1
-    });
-    const phobos_trail_points = new THREE.Line(phobos_trail_geometry,phobos_trail_material);
-    // #endregion
-
-    // Create Deimos
-    // #region
-    const geometry_deimos = new THREE.SphereGeometry(deimos_size,16,16);
-    const material_deimos = new THREE.MeshStandardMaterial({
-        color: "#9E8F81"
-    });
-    const deimos = new THREE.Mesh(geometry_deimos,material_deimos);
-    deimos.castShadow = true;
-    deimos.receiveShadow = true;
-    deimos.position.set(0,0,0)
-
-    // Deimos orbit trail
-    const deimos_trail_geometry = new THREE.BufferGeometry();
-    const deimos_trail_material = new THREE.LineBasicMaterial({
-        vertexColors:true,
-        transparent:true,
-        linewidth:1
-    });
-    const deimos_trail_points = new THREE.Line(deimos_trail_geometry,deimos_trail_material);
-    // #endregion
-
-    // Create test moon
+    // Creating moons
+    //#region
     // Create generic moon function
-    function create_moon(
-        scale,
+    function create_moon({
+        mars_size,
+        scale_to_mars,
+        size_multiplier,
+        model = null,
         color,
 
         orbit_speed,
@@ -424,64 +363,32 @@ import './style.css';
 
         segments = 16,
         rings = 8,
-    ){
-        // Mesh
-        const geometry_moon = new THREE.SphereGeometry(
-            mars_size * scale,
-            segments,
-            rings
-        )
-        const material_moon = new THREE.MeshStandardMaterial({
-            color: color,
-            wireframe: false
-        })
-        const mesh_moon = new THREE.Mesh(geometry_moon,material_moon);
-        mesh_moon.castShadow = true;
-        mesh_moon.receiveShadow = true;
-        mesh_moon.position.set(10,0,0);
-
-        // Trail
-        const trail_geometry = new THREE.BufferGeometry();
-        const trail_material = new THREE.LineBasicMaterial({
-            vertexColors: true,
-            transparent: true,
-            linewidth: 1
-        })
-        const points = new THREE.Line(trail_geometry,trail_material);
-
-        // Orbit plane
-        const orbit_plane = new THREE.Object3D();
-        orbit_plane.rotation.set(
-            tilt * (Math.PI/180),
-            0,
-            0
-        );
-
-        orbit_plane.add(mesh_moon)
-        orbit_plane.add(points)
-
-        // return moon_object
-        return {
+    }){
+        const moon = {
             angle: 0,
 
             orbit_radius: orbit_radius,
             orbit_speed: orbit_speed,
-            orbit_plane: orbit_plane,
+            orbit_plane: null,
 
-            mesh: mesh_moon,
+            mesh: null,
 
             trail: [],
             trail_max: 200,
-            trail_geometry: trail_geometry,
-            trail_points: points,
+            trail_geometry: null,
+            trail_points: null,
 
             update_position(delta_time){
-                // Tidally locking moon to the center of movement
-                this.angle += this.orbit_speed * delta_time;
-
+                if (!this.mesh) return;
+                
+                
                 // Translating the moon around the center of movement
+                this.angle += delta_time * this.orbit_speed;
                 this.mesh.position.x = 1 * Math.sin(this.angle) * this.orbit_radius;
                 this.mesh.position.z = 1 * Math.cos(this.angle) * this.orbit_radius;
+
+                // Tidally locking moon to the center of movement
+                this.mesh.rotation.y = this.angle
             },
             draw_trail(){
                 // Drawing trail
@@ -522,27 +429,117 @@ import './style.css';
                 this.trail_geometry.setAttribute('color'   , new THREE.BufferAttribute(colors,4));
                 this.trail_geometry.attributes.position.needsUpdate = true;
                 this.trail_geometry.attributes.color.needsUpdate = true;
-            }
+            },
+        } 
+
+        // Mesh variables
+        const model_size = mars_size * scale_to_mars * size_multiplier;
+
+        // Orbit plane
+        moon.orbit_plane = new THREE.Object3D();
+        moon.orbit_plane.rotation.set(
+            (mars_tilt_angle + tilt) * (Math.PI/180),
+            0,
+            0
+        );
+
+        if(model == null){
+            // creating mesh from simple sphere
+            const geometry_moon = new THREE.SphereGeometry(
+                model_size,
+                segments,
+                rings
+            );
+
+            const material_moon = new THREE.MeshStandardMaterial({
+                color: color,
+                wireframe: false
+            });
+
+            moon.mesh = new THREE.Mesh(geometry_moon,material_moon);
+
+            moon.mesh.castShadow = true;
+            moon.mesh.receiveShadow = true;
+
+            moon.orbit_plane.add(moon.mesh);
+
+        } else {
+            // creating mesh from 3d model
+            gltf_loader.load(model,(gltf)=>{
+                moon.mesh = gltf.scene;
+
+                moon.mesh.scale.set(
+                    (1/10) * model_size,
+                    (1/10) * model_size,
+                    (1/10) * model_size
+                );
+
+                moon.mesh.traverse((child)=>{
+                    if(child.isMesh){
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+
+                moon.orbit_plane.add(moon.mesh);
+            })
         }
+
+        // Trail
+        //#region 
+        moon.trail_geometry = new THREE.BufferGeometry();
+        const trail_material = new THREE.LineBasicMaterial({
+            vertexColors: true,
+            transparent: true,
+            linewidth: 1
+        })
+        moon.points = new THREE.Line(moon.trail_geometry,trail_material);
+
+        moon.orbit_plane.add(moon.points)
+        //#endregion
+
+        // return moon_object
+        return moon
     };
 
+    const size_multiplier = 3;
 
+    // create phobos
+    const phobos = new create_moon({
+        mars_size:  mars_size,
+        scale_to_mars: (phobos_diameter/mars_diameter),
+        size_multiplier: size_multiplier,
+        model:'./src/assets/models/phobos_original.glb',
 
-    //#region
-    const testmoon = new create_moon(
-        0.05,
-        "#9c0b0b",
+        orbit_speed: phobos_orbit_speed,
+        orbit_radius: phobos_orbital_distance,
 
-        2,
-        4,
+        tilt: 1.075,
 
-        30,
+        segments: 16,
+        rings: 8,
+    })
 
-        16,
-        8
-    )
+    // create deimos
+    const deimos = new create_moon({
+        mars_size:  mars_size,
+        scale_to_mars: (deimos_diameter/mars_diameter),
+        size_multiplier: size_multiplier,
+        color: "#9E8F81",
+
+        orbit_speed: deimos_orbit_speed,
+        orbit_radius: deimos_orbital_distance,
+
+        tilt: 0.93,
+
+        segments: 16,
+        rings: 8,
+    })
+
+    const moons = [phobos,deimos]
 
     //#endregion
+
     // Camera
     // #region
     const camera = new THREE.PerspectiveCamera(45, sizes.width/sizes.height,0.1,1000);
@@ -559,13 +556,8 @@ import './style.css';
     scene.add(mars_atmos);
     scene.add(mars_atmos_glow);
 
-    scene.add(testmoon.orbit_plane)
-    scene.add(phobosPivot);
-    scene.add(deimosPivot);
-
-    phobosPivot.add(phobos_trail_points);
-    deimosPivot.add(deimos);
-    deimosPivot.add(deimos_trail_points);
+    scene.add(deimos.orbit_plane)
+    scene.add(phobos.orbit_plane)
 
     scene.add(ambient_light);
     scene.add(light);
@@ -580,7 +572,6 @@ import './style.css';
 
     scene.add(camera);
     // #endregion
-
 
     // Renderer run
     // #region
@@ -600,7 +591,7 @@ import './style.css';
     controls.autoRotateSpeed = -cam_rotation_speed;
     controls.enableDamping = true;
     controls.enablePan     = false;
-    controls.enableZoom    = false;
+    controls.enableZoom    = true;
 
 // #endregion
 
@@ -652,89 +643,11 @@ import './style.css';
             material_cloud_shader.uniforms.uLightPosition.value = localLightPos
         // #endregion
 
-
-
-        // Animating testmoon
-        if(testmoon){
-            testmoon.update_position(deltaTime)
-            testmoon.draw_trail()
+        // Animating moons
+        for (const moon of moons){
+            moon.update_position(deltaTime)
+            moon.draw_trail()
         }
-        // Animating Phobos ---
-        // #region
-            if(phobos){
-                // Tidally locking Phobos' rotation                
-                phobos_angle += phobos_rotation_speed * deltaTime;
-
-                // Translating Phobos around mars
-                phobos.position.x = 1 * Math.sin(phobos_angle) * phobos_orbit_radius;
-                phobos.position.z = 1 * Math.cos(phobos_angle) * phobos_orbit_radius;
-                // Animating Phobos trail
-                // append last positions
-                phobos_trail.push(phobos.position.clone());
-                if(phobos_trail.length > phobos_trail_max) {
-                    phobos_trail.shift()
-                };
-                // turn array into geometry
-                const phobos_positions = new Float32Array(phobos_trail.length * 3);
-                const phobos_positions_colors = new Float32Array(phobos_trail.length * 4)
-                for (let i = 0; i < phobos_trail.length ; i++){
-                    phobos_positions[i*3]       = phobos_trail[i].x;
-                    phobos_positions[(i*3) + 1] = phobos_trail[i].y;
-                    phobos_positions[(i*3) + 2] = phobos_trail[i].z;
-        
-                    const opacity = i/(phobos_trail.length*10);
-                    phobos_positions_colors[i*4]       = 1;
-                    phobos_positions_colors[(i*4) + 1] = 1;
-                    phobos_positions_colors[(i*4) + 2] = 1;
-                    phobos_positions_colors[(i*4) + 3] = opacity;
-                };
-        
-                // send to GPU
-                if (moon_trail) {
-                    phobos_trail_geometry.setAttribute('position',new THREE.BufferAttribute(phobos_positions, 3));
-                    phobos_trail_geometry.setAttribute('color',new THREE.BufferAttribute(phobos_positions_colors, 4));
-                    phobos_trail_geometry.attributes.position.needsUpdate = true;
-                    phobos_trail_geometry.attributes.color.needsUpdate = true;
-                }
-            }
-        // #endregion
-
-        // Animating Deimos ---
-        // #region
-            if (deimos){
-
-                deimos_angle += deimos_rotation_speed * deltaTime;
-            
-                deimos.position.x = 1 * Math.sin(deimos_angle) * deimos_orbit_radius;
-                deimos.position.z = 1 * Math.cos(deimos_angle) * deimos_orbit_radius;
-                // Animating Deimos trail
-                deimos_trail.push(deimos.position.clone());
-                if(deimos_trail.length > deimos_trail_max) {
-                    deimos_trail.shift()
-                };
-                const deimos_positions = new Float32Array(deimos_trail.length * 3);
-                const deimos_positions_colors = new Float32Array(deimos_trail.length * 4);
-                for(let i = 0; i < deimos_trail.length; i++){
-                    deimos_positions[i*3]       = deimos_trail[i].x;
-                    deimos_positions[(i*3) + 1] = deimos_trail[i].y;
-                    deimos_positions[(i*3) + 2] = deimos_trail[i].z;
-        
-                    const opacity = i/(deimos_trail.length * 10);
-                    deimos_positions_colors[i*4]       = 1;
-                    deimos_positions_colors[(i*4) + 1] = 1;
-                    deimos_positions_colors[(i*4) + 2] = 1;
-                    deimos_positions_colors[(i*4) + 3] = opacity;
-                }
-        
-                // Send to GPU
-                if (moon_trail) {
-                    deimos_trail_geometry.setAttribute('position',new THREE.BufferAttribute(deimos_positions,3));
-                    deimos_trail_geometry.setAttribute('color', new THREE.BufferAttribute(deimos_positions_colors,4));
-                    deimos_trail_geometry.attributes.position.needsUpdate = true;
-                    deimos_trail_geometry.attributes.color.needsUpdate = true;
-                }
-            }
-        // #endregion
 
         // Smoothing out camera control ---
         controls.update();
