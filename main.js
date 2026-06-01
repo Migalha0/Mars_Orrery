@@ -43,19 +43,17 @@ import './style.css';
     // fake dimensions
     const mars_size = 4.5;
     const mars_tilt_angle = 25;
-    const mars_atmosphere_size = 1.053;
-    const phobos_orbital_distance = mars_size + (0.884 * mars_size)
-    const deimos_orbital_distance = mars_size + (3.465 * mars_size)
+    const mars_atmosphere_size = 1.005;
+    const phobos_diameter_fictional = 17.5
 
     // real dimensions (in km)
     const mars_diameter = 6770
-    const phobos_diameter = 22.2
-    const deimos_diameter = 12.4
     const atmosphere_height= 11.1
 
-
-
-
+    const phobos_diameter = 22.2
+    const deimos_diameter = 12.4
+    const phobos_orbital_distance = 2 * (mars_size + (0.884 * mars_size))
+    const deimos_orbital_distance = 2 * (mars_size + (3.465 * mars_size))
 
     // #endregion
 
@@ -182,7 +180,7 @@ import './style.css';
     light.shadow.mapSize.height = 2048
 
     // Fix shadow artifacts (streaks,triangles)
-    light.shadow.bias = -0.0005
+    light.shadow.bias = -0.002
     light.position.set(1,0,13);
 
     green_light.position.copy(light.position).negate().multiplyScalar(0.35)
@@ -256,8 +254,9 @@ import './style.css';
         displacementMap: displacement_map_mars,
 
         // normal map strength
-        normalScale: new THREE.Vector2(1.6,1.6),
-        displacementScale: 0.35,
+        normalScale: new THREE.Vector2(4,4),
+        displacementScale: 0.3,
+        displacementBias: -0.15,
 
         // shadow
         shadowSide: THREE.FrontSide,
@@ -300,7 +299,8 @@ import './style.css';
         uniforms: {
             uLightPosition: {value: light.position},
             uDisplacementMap: {value:displacement_map_mars},
-            uDisplacementScale: {value:material_mars.displacementScale+0.01},
+            uDisplacementScale: {value:material_mars.displacementScale},
+            uDisplacementBias: {value:material_mars.displacementBias},
             uWindDirection: {value: new THREE.Vector2(-0.2,-0.3)},
             uTime: {value:0}
         }
@@ -502,7 +502,7 @@ import './style.css';
         return moon
     };
 
-    const size_multiplier = 3;
+    const size_multiplier = 1;
 
     // create phobos
     const phobos = new create_moon({
@@ -587,11 +587,14 @@ import './style.css';
 // CAMERA MOVEMENT SETTINGS
     // Camera controls
     const controls = new OrbitControls(camera,canvas)
-    controls.autoRotate    = true;
+    controls.autoRotate      = true;
     controls.autoRotateSpeed = -cam_rotation_speed;
-    controls.enableDamping = true;
-    controls.enablePan     = false;
-    controls.enableZoom    = true;
+    controls.enableDamping   = true;
+    controls.enablePan       = false;
+    controls.enableZoom      = true;
+    controls.minDistance = 12
+    controls.maxDistance = 30
+    controls.zoomSpeed = 0.2
 
 // #endregion
 

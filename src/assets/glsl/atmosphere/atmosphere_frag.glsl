@@ -10,9 +10,8 @@ void main(){
     
     // Calculate camera dot product
     float cameraDotProduct = abs(dot(viewDirection, vNormal));
-    float intensity = pow(cameraDotProduct,1.1);
 
-    float fresnel = clamp(pow(1.0 - cameraDotProduct,3.0),0.0,1.0);
+    float fresnel = smoothstep(0.0,0.6,clamp(pow(1.0 - cameraDotProduct,6.5),0.0,1.0));
 
     // Calcualte light dot product
     float lightDotProduct = dot(lightDirection, vNormal);
@@ -23,7 +22,7 @@ void main(){
     vec4 color = vec4(
         vec3(
             atmosphereColor *
-            (lightDotProduct+0.78) *
+            (lightDotProduct+0.65) *
             fresnel *
             (pow(cameraDotProduct,1.2))*
             1.3
