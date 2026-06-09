@@ -14,11 +14,11 @@ This project started as a personal study of real time rendering, shaders, lighti
 
 ## Tools used
 
-- Three.js
 - Vite
 - JavaScript
-- GLSL shaders
 - HTML / CSS
+- Three.js
+- GLSL shaders
 - Blender
 
 ## To run locally
@@ -39,6 +39,7 @@ npm run dev
 
 - Volumetric clouds
 - Starry skybox
+- Dithering filter
 
 ## Future Fixes
 
