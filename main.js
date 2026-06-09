@@ -29,6 +29,7 @@ import './style.css';
 //~~~~~~~~~~~~~~~~~~~~~~~VARS~~~~~~~~~~~~~~~~~~~~~~~~
 // #region
     // Creating toggle variable for moon trail
+    let moon_cartoon = true;
     let moon_trail = false;
     let performance_render = false;
 
@@ -45,6 +46,11 @@ import './style.css';
     const mars_tilt_angle = 25;
     const mars_atmosphere_size = 1.005;
     const phobos_diameter_fictional = 17.5
+    const fake_phobos_orbital_distance = mars_size + 1
+    const fake_deimos_orbital_distance = mars_size + 3
+    const size_multiplier_fake = 2.0;
+    
+    const size_multiplier_real = 1;
 
     // real dimensions (in km)
     const mars_diameter = 6770
@@ -52,8 +58,8 @@ import './style.css';
 
     const phobos_diameter = 22.2
     const deimos_diameter = 12.4
-    const phobos_orbital_distance = 2 * (mars_size + (0.884 * mars_size))
-    const deimos_orbital_distance = 2 * (mars_size + (3.465 * mars_size))
+    const real_phobos_orbital_distance = 2 * (mars_size + (0.884 * mars_size))
+    const real_deimos_orbital_distance = 2 * (mars_size + (3.465 * mars_size))
 
     // #endregion
 
@@ -123,11 +129,10 @@ import './style.css';
 
 // #endregion
 
-//~~~~~~~~~~~~~~~~~~~~~~~MOON_TRAIL~~~~~~~~~~~~~~~~~~~~~~~
+//~~~~~~~~~~~~~~~~~~~~~~~MOON_ACTIONS~~~~~~~~~~~~~~~~~~~~~~~
 // #region
     const moonTrailToggleButton = document.querySelector('#moon_trail_toggle');
-
-    moonTrailToggleButton.addEventListener('click', ()=>{
+    moonTrailToggleButton.addEventListener('click', () => {
 
         moon_trail = !moon_trail;
         
@@ -148,6 +153,25 @@ import './style.css';
             moonTrailToggleButton.classList.add('active')
             moonTrailToggleButton.classList.remove('inactive')
         }
+    })
+
+    const cartoonToggleButton = document.querySelector('#real_toggle');
+    cartoonToggleButton.addEventListener('click', () => {        
+
+        if(moon_cartoon){
+            cartoonToggleButton.classList.remove('active')
+            cartoonToggleButton.classList.add('inactive')
+
+        } else {
+            cartoonToggleButton.classList.add('active')
+            cartoonToggleButton.classList.remove('inactive')
+        }
+
+        deimos.set_cartoon(moon_cartoon);
+
+        phobos.set_cartoon(moon_cartoon,0.0033);
+
+        moon_cartoon = !moon_cartoon;
     })
 
 // #endregion
@@ -379,8 +403,7 @@ import './style.css';
             trail_points: null,
 
             update_position(delta_time){
-                if (!this.mesh) return;
-                
+                if (!this.mesh) return;                
                 
                 // Translating the moon around the center of movement
                 this.angle += delta_time * this.orbit_speed;
@@ -430,6 +453,15 @@ import './style.css';
                 this.trail_geometry.attributes.position.needsUpdate = true;
                 this.trail_geometry.attributes.color.needsUpdate = true;
             },
+            set_cartoon(cartoon_state,special_scale = 1){
+                if (cartoon_state){
+                    this.mesh.scale.setScalar(0.5*special_scale);
+                    this.orbit_radius = this.orbit_radius*2
+                } else {
+                    this.mesh.scale.setScalar(1.0*special_scale);
+                    this.orbit_radius = this.orbit_radius/2
+                }
+            }
         } 
 
         // Mesh variables
@@ -502,17 +534,17 @@ import './style.css';
         return moon
     };
 
-    const size_multiplier = 1;
+
 
     // create phobos
     const phobos = new create_moon({
         mars_size:  mars_size,
         scale_to_mars: (phobos_diameter/mars_diameter),
-        size_multiplier: size_multiplier,
+        size_multiplier: size_multiplier_fake,
         model:'./src/assets/models/phobos_original.glb',
 
         orbit_speed: phobos_orbit_speed,
-        orbit_radius: phobos_orbital_distance,
+        orbit_radius: fake_phobos_orbital_distance,
 
         tilt: 1.075,
 
@@ -524,11 +556,11 @@ import './style.css';
     const deimos = new create_moon({
         mars_size:  mars_size,
         scale_to_mars: (deimos_diameter/mars_diameter),
-        size_multiplier: size_multiplier,
+        size_multiplier: size_multiplier_fake,
         color: "#9E8F81",
 
         orbit_speed: deimos_orbit_speed,
-        orbit_radius: deimos_orbital_distance,
+        orbit_radius: fake_deimos_orbital_distance,
 
         tilt: 0.93,
 

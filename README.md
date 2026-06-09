@@ -11,7 +11,6 @@ This project started as a personal study of real time rendering, shaders, lighti
 - Atmospheric shaders
 - Lens flare
 - Interactive control panel
-- image post processing
 
 ## Tools used
 
@@ -40,6 +39,10 @@ npm run dev
 
 - Volumetric clouds
 - Starry skybox
+
+## Future Fixes
+
+- Fix mountains poking out of atmospheric shaders
 
 ## License
 
